@@ -11,7 +11,9 @@ SECRET_KEY = '$timeatk1'
 # DB 연결 코드
 from pymongo import MongoClient
 client = MongoClient('localhost', 27017)
-db = client.timeattsck
+db = client.timeattack
+
+USER = ()
 
 @app.route('/')
 def home():
