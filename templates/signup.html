@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>회원가입</title>
+    <!--ajax 연결 -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
+    <style>
+
+        .container {
+            width: 400px;
+            height: 400px;
+
+            margin: 20px auto;
+            border: 3px solid black;
+            border-radius: 10px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-join {
+            width: 250px;
+            margin: 20px;
+        }
+
+        .box-button {
+            width: 250px;
+            margin: 20px;
+        }
+
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            // id 값을 입력했을 때
+            $('#id').blur(function () {
+                let id = $('#id').val()
+                // 입력받은 값 중 입력하지 않은 값이 있을 경우
+                if (id == "") {
+                    $('#id_check').html('<i class="fa-solid fa-circle-exclamation"></i>')
+                    $('#hidden-id').val('false')
+                } else {
+                    // 아이디 중복 확인
+                    $.ajax({
+                        type: "POST",
+                        url: '/api/id_dup',
+                        data: {'id_give': id},
+                        success: function (response) {
+                            if (response['duplicate']) {
+                                $('#id_check').html('<i class="fa-regular fa-circle-xmark"></i>')
+                                $('#hidden-id').val('false')
+                            } else {
+                                // 정규 표현식을 이용한 아이디 형식 제한 영문 소문자, 대문자, 숫자, 4-30자
+                                let id_regExp = /^[a-zA-Z0-9]([a-zA-Z0-9]*)(@)([a-zA-Z0-9]*)(\.)([a-zA-Z]*){4,40}$/;
+                                if (!id_regExp.test(id)) {
+                                    $('#id_check').html('<i class="fa-regular fa-circle-xmark"></i>')
+                                    $('#hidden-id').val('false')
+                                } else {
+                                    $('#id_check').html('<i class=\"fa-regular fa-circle-check\"></i>')
+                                    $('#hidden-id').val('true')
+                                }
+                            }
+                        }
+                    })
+                }
+            })
+            // pwd 값을 입력했을 때
+            $('#pwd').blur(function () {
+                let pwd = $('#pwd').val()
+                // 입력받은 값 중 입력하지 않은 값이 있을 경우
+                if (pwd == "") {
+                    $('#pwd_check').html('<i class="fa-solid fa-circle-exclamation"></i>')
+                    $('#hidden-pwd').val('false')
+                } else {
+                    // 정규 표현식을 이용한 패스워드 형식 제한 영문 소문자, 대문자, 숫자,!@#$%^ 8-20자
+                    let pwd_regExp = /^[a-zA-Z0-9!@#$%^]{8,20}$/;
+                    if (!pwd_regExp.test(pwd)) {
+                        $('#pwd_check').html('<i class="fa-regular fa-circle-xmark"></i>')
+                        $('#hidden-pwd').val('false')
+                    } else {
+                        $('#pwd_check').html('<i class=\"fa-regular fa-circle-check\"></i>')
+                        $('#hidden-pwd').val('true')
+                    }
+                }
+            })
+
+            function signup() {
+                if ($('#hidden-id').val() == 'true') {
+                    if ($('#hidden-pwd').val() == 'true') {
+                        // 입력한 값들 가져와 변수에 저장
+                        let id = $('#id').val()
+                        let pwd = $('#pwd').val()
+                        $.ajax({
+                            type: "POST",
+                            url: "/api/join",
+                            data: {'id_give': id, 'pwd_give': pwd},
+                            success: function (response) {
+                                alert(response["msg"])
+                                window.location.href = '/'
+                            }
+                        })
+                    } else {
+                        alert('패스워드는 영대소문자, 숫자 특수문자 8-20자 입니다.!')
+                    }
+                } else {
+                    alert('아이디가 중복 또는 이메일 형식이 아닙니다.')
+                }
+            }
+        })
+
+        function login() {
+            let id = $('#id').val()
+            let pwd = $('#pwd').val()
+
+            $.ajax({
+                type: "POST",
+                url: "/api/login",
+                data: {'id_give': id, 'pwd_give': pwd},
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        alert('토큰 생성 완료!')
+                        // 토큰이 정상적으로 발급되면, 토큰을 받아온다! 'token' 토큰을 받아 쿠키에 저장
+                        $.cookie('mytoken', response['token']);  //쿠키는 key:value 형태로 저장됨
+                        alert(response['msg']);
+                        window.location.replace('/')
+                    } else {
+                        // 로그인 실패 시
+                        alert(response['msg']);
+                    }
+                }
+            })
+        }
+
+    </script>
+<body>
+<main class="container">
+    <div class="box-join"> <!-- join box -->
+        <div class="box-input"> <!-- input box -->
+            <input class="input-join" type="text" id="id" placeholder="이메일 주소">
+            <span id="id_check"></span><!-- input id -->
+            <input class="input-join" type="password" id="pwd" placeholder="비밀번호">
+            <span id="pwd_check"></span><!-- input pw -->
+        </div>
+        <!--입력 값이 전부 올바르게 입력되었는지 판별을 위한 boolean값을 저장하기 위한 type="hidden"태그 들-->
+        <input type="hidden" id="hidden-id" value="false">
+        <input type="hidden" id="hidden-pwd" value="false">
+        <div class="box-button"> <!-- button box -->
+            <button class="button" type="button" onclick="join()">회원가입</button> <!-- button -->
+        </div>
+        <div class="box-button"> <!-- button box -->
+            <button class="button" type="button" onclick="login()">로그인</button> <!-- button -->
+        </div>
+    </div>
+</main>
+</body>
+</html>
